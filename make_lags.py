@@ -64,12 +64,17 @@ TOTAL_TRIALS = FOIL_TRIALS + TOTAL_PAIR_TRIALS
 
 def main(task_filename, debug_filename=None):
     trial_list = make_trial_list()
-    for_task = format_trial_list_for_task(trial_list)
-    for_task.to_csv(task_filename, index=False, header=False)
+    formatted = format_trial_list(trial_list)
+    trial_list.to_json(task_filename, orient="records")
     logger.info('Saved task data to {}'.format(task_filename))
     if debug_filename:
         trial_list.to_csv(debug_filename, index=False)
         logger.debug('Saved debug data to {}'.format(debug_filename))
+
+
+def format_trial_list(trial_list):
+    output = pd.DataFrame(trial_list, columns=['stype', 'lag'])
+    return output
 
 
 def make_trial_list():
@@ -82,6 +87,7 @@ def make_trial_list():
     for c, lag_range in LAG_COUNTS:
         populate_lags(trial_list, c, lag_range, pair_type_counters)
     fill_foils(trial_list)
+    trial_list['trial_number'] = range(1, len(trial_list) + 1)
     return trial_list
 
 
@@ -159,32 +165,6 @@ def potential_start_indexes(trial_list, lag):
     return list(trial_list.index[matches])
 
 
-def format_trial_list_for_task(trial_list):
-    output = pd.DataFrame(index=trial_list.index, columns=['stype', 'lag'])
-    output.stype = trial_list.apply(output_stim_type, axis=1)
-    output.lag = trial_list.apply(output_lag, axis=1)
-    return output
-
-
-STYPE_CODE_MAP = {
-    ('repeat', 'a'): 0,
-    ('repeat', 'b'): 100,
-    ('lure', 'a'): 200,
-    ('lure', 'b'): 300,
-    ('foil', 'x'): 400
-}
-
-
-def output_stim_type(row):
-    stype_code_addend = STYPE_CODE_MAP.get(
-        (row.trial_type, row.repetition), 9000)
-    return stype_code_addend + row.stim_number
-
-
-def output_lag(trial_row):
-    if trial_row.repetition == 'b':
-        return 500 + trial_row.lag
-    return -1
 
 
 if __name__ == '__main__':
