@@ -198,7 +198,7 @@
             {
               "title": "Load CSV",
               "message": "before:prepare",
-              "code": "// Make a predictable pseudorandom number generator based on ppt and session id\nvar rng = new Math.seedrandom(this.options.ppt + '/' + this.options.session);\nvar orderNum = Math.trunc(rng() * 1000);\nvar orderNum = 1; // for testing\n\n// Use a specific ordering file based on that number\nconst response = await fetch(this.files['order' + orderNum + '.json'])\nthis.options.templateParameters = await response.json()\n"
+              "code": "function getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, '\\\\$&');\n    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, ' '));\n}\n\nthis.options.ppt = getParameterByName('PPT') || 0;\nthis.options.session = getParameterByName('session') || 0;\n\n// Make a predictable pseudorandom number generator based on ppt and session id\nvar rng = new Math.seedrandom(String(this.options.ppt) + '/' + String(this.options.session));\nvar orderNum = Math.trunc(rng() * 1000);\nvar orderNum = 1; // for testing\n\n// Use a specific ordering file based on that number\nconst response = await fetch(this.files['order' + orderNum + '.json'])\nthis.options.templateParameters = await response.json()\n"
             }
           ]
         ]
@@ -545,7 +545,7 @@
         600
       ],
       "title": "Stimulus",
-      "_tab": "Content",
+      "_tab": "Behavior",
       "timeout": "",
       "tardy": false,
       "correctResponse": ""
@@ -594,7 +594,7 @@
         ]
       },
       "title": "Sequence",
-      "_tab": "Scripts",
+      "_tab": "Behavior",
       "timeout": "2500"
     },
     "12": {
