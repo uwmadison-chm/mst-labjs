@@ -1,6 +1,7 @@
 # Mnemonic Similarity Task for lab.js
 
-A simple online MST implementation, based on [this repository](https://github.com/celstark/MST) from the Stark lab.
+A simple online MST implementation in lab.js,
+based on [this PsychoPy repository](https://github.com/celstark/MST) from the Stark lab.
 
 Pseudorandom lag order is based on ppt and session IDs.
 
