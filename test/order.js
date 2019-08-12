@@ -1,12 +1,20 @@
 var assert = require('chai').assert;
 
+// This is the bucket ordering
+var order1 = require('./order1.json');
+// This is the stimulus set metadata, which lists the lure difficulties for each
+var set1 = require('./set1.json');
+
 var seedrandom = require('seedrandom');
 var OrderFiller = require('../order');
 var o;
 
 describe('OrderFiller', function() {
   beforeEach(function() {
-    o = new OrderFiller('test', [], {});
+    function clone(x) {
+      return JSON.parse(JSON.stringify(x));
+    }
+    o = new OrderFiller('test', clone(order1), clone(set1));
   });
 
   describe('should initialize correctly', function() {
@@ -27,6 +35,10 @@ describe('OrderFiller', function() {
       assert.notInclude(o.availableStimuli, 0);
       assert.notInclude(o.availableStimuli, 193);
     });
+
+    it('stores the lure difficulty', function() {
+      assert.equal(Object.keys(o.lureDifficulty).length, 192);
+    });
   });
 
   describe('rng is stable', function() {
@@ -39,7 +51,7 @@ describe('OrderFiller', function() {
       assert.equal(o.rng(), 0.619874173930009);
     });
 
-    it('can use a passed-in rng', function() {
+    it('can reuse a passed-in rng function', function() {
       var r = seedrandom('eclosion');
       o = new OrderFiller(r, [], {});
       assert.equal(o.rng(), 0.619874173930009);
@@ -47,11 +59,57 @@ describe('OrderFiller', function() {
   });
 
   describe('should insert stimuli correctly', function() {
+    it('creates simple pools', function() {
+      var pool = o.createPool(10);
+      assert.equal(pool.length, 10);
+      assert.notInclude(o.availableStimuli, pool[0]);
+    });
+
+    it('creates non-overlapping pools', function() {
+      var pool1 = o.createPool(96);
+      var pool2 = o.createPool(96);
+      for (var x in pool1) {
+        assert.notInclude(pool2, x);
+      }
+    });
+
+    it('initializes lure bins', function() {
+      o.initializeLureBins();
+      assert.equal(o.lureBins[1].length, 39);
+      assert.equal(o.lureBins[2].length, 37);
+      assert.equal(o.lureBins[3].length, 39);
+      assert.equal(o.lureBins[4].length, 38);
+      assert.equal(o.lureBins[5].length, 38);
+    });
+
+    it.only('creates balanced lure pools', function() {
+      var pool = o.createLurePool(5);
+      assert.equal(pool.length, 5);
+
+      var totals = [0, 0, 0, 0, 0, 0];
+
+      for (var x in pool) {
+        var diff = o.lureDifficulty[String(x)]
+        console.log("Difficulty of lure for stim:", diff, x);
+        totals[diff]++;
+      }
+      console.log(totals);
+      for (var i = 1; i <= 5; i++) {
+        assert.equal(totals[i], 1, `Pool ${i} doesn't have one thing: ${totals[i]}`);
+      }
+    });
+
     it('pops and removes stimuli', function() {
       var stimuli = o.popStimuli();
       assert.equal(o.availableStimuli.length, 191);
       assert.isAtLeast(stimuli, 1);
       assert.isAtMost(stimuli, 192);
     });
+
+    it('foils are unique');
+    it('lures are unique');
+    it('lures are paired');
+    it('repeats are unique');
+    it('repeats are paired');
   });
 });

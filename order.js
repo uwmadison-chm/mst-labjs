@@ -19,5 +19,61 @@ module.exports = class OrderFiller {
     var value = this.availableStimuli.splice(index, 1);
     return value[0];
   }
+
+  buildLureBin(n) {
+    var bin = [];
+    for (var k in Object.keys(this.lureDifficulty)) {
+      var difficulty = this.lureDifficulty[k];
+      if (String(difficulty) == String(n)) {
+        bin.push(k);
+      }
+    }
+    return bin;
+  }
+
+  initializeLureBins() {
+    this.lureBins = [];
+    for (var i = 1; i <= 5; i++) {
+      this.lureBins[i] = this.buildLureBin(i);
+    }
+  }
+
+  createLurePool(length) {
+    // This has to be balanced across lureDifficulty, so the pool ends up with 
+    // even-ish numbers of each difficulty of lure. So we create some bins 
+    // that store the lures by difficulty, 1-5.
+    var pool = [];
+    if (!this.lureBins) {
+      this.initializeLureBins();
+    }
+    for (var i = 0; i < length; i++) {
+      // Now we pull evenly from each bin
+      var bin = this.lureBins[(i % 5) + 1];
+      // Pick one from chosen bin
+      var index = bin.length * this.rng() | 0;
+      var value = bin.splice(index, 1);
+      pool.push(value);
+    }
+    return pool;
+  }
+
+  createPool(length) {
+    var pool = [];
+    while (pool.length < length) {
+      if (this.availableStimuli.length == 0) {
+        throw new Error("No more available stimuli");
+      }
+      pool.push(this.popStimuli())
+    }
+    return pool;
+  }
+
+  createPools() {
+    // Lures are pulled first, to balance according to lureDifficulty
+    this.lures = this.createLurePool(64);
+    // TODO: remove lures from available
+    this.repeats = this.createPool(64);
+    this.foils = this.createPool(64);
+  }
 }
 
