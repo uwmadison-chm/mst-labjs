@@ -82,7 +82,7 @@ def make_trial_list():
     pd.set_option('display.max_rows', TOTAL_TRIALS)
     trial_list = pd.DataFrame(
         index=range(TOTAL_TRIALS),
-        columns=['stim_number', 'trial_type', 'repetition', 'lag'])
+        columns=['stim_bin_index', 'trial_type', 'repetition', 'lag'])
     pair_type_counters = {pair_type: count(1) for pair_type in PAIR_TYPES}
     for c, lag_range in LAG_COUNTS:
         populate_lags(trial_list, c, lag_range, pair_type_counters)
@@ -100,23 +100,23 @@ def populate_lags(trial_list, lag_count, lag_range, pair_type_counters):
     possible_lags = list(lag_range)
     for i in range(lag_count):
         for pair_type, counter in pair_type_counters.items():
-            stim_number = next(counter)
+            stim_bin_index = next(counter)
             logger.debug('Trying to place {} #{}'.format(
-                pair_type, stim_number))
+                pair_type, stim_bin_index))
             place_lagged_trials(
-                trial_list, possible_lags, pair_type, stim_number)
+                trial_list, possible_lags, pair_type, stim_bin_index)
 
 
 def fill_foils(trial_list):
-    foil_stim_numbers = list(range(1, FOIL_TRIALS + 1))
-    random.shuffle(foil_stim_numbers)
-    ix = trial_list[trial_list.stim_number.isnull()].index
-    trial_list.loc[ix, 'stim_number'] = foil_stim_numbers
+    foil_stim_bin_indexs = list(range(1, FOIL_TRIALS + 1))
+    random.shuffle(foil_stim_bin_indexs)
+    ix = trial_list[trial_list.stim_bin_index.isnull()].index
+    trial_list.loc[ix, 'stim_bin_index'] = foil_stim_bin_indexs
     trial_list.loc[ix, 'trial_type'] = 'foil'
     trial_list.loc[ix, 'repetition'] = 'a'
 
 
-def place_lagged_trials(trial_list, possible_lags, pair_type, stim_number):
+def place_lagged_trials(trial_list, possible_lags, pair_type, stim_bin_index):
     """
     Puts both parts of a pair of trials into trial_list. Raises a RuntimeError
     if no possible_lags can fit in trial_list.
@@ -132,11 +132,11 @@ def place_lagged_trials(trial_list, possible_lags, pair_type, stim_number):
         end_index = start_index + lag + 1
         logger.debug('Placed at {} and {}, lag {}'.format(
             start_index, end_index, lag))
-        trial_list.loc[start_index].stim_number = stim_number
+        trial_list.loc[start_index].stim_bin_index = stim_bin_index
         trial_list.loc[start_index].trial_type = pair_type
         trial_list.loc[start_index].repetition = 'a'
         trial_list.loc[start_index].lag = lag
-        trial_list.loc[end_index].stim_number = stim_number
+        trial_list.loc[end_index].stim_bin_index = stim_bin_index
         trial_list.loc[end_index].trial_type = pair_type
         trial_list.loc[end_index].repetition = 'b'
         trial_list.loc[end_index].lag = lag
@@ -145,7 +145,7 @@ def place_lagged_trials(trial_list, possible_lags, pair_type, stim_number):
 
     else:
         logger.error(trial_list)
-        free_count = trial_list.stim_number.isnull().sum()
+        free_count = trial_list.stim_bin_index.isnull().sum()
         raise RuntimeError(
             'Out of possible lags: {} slots remain'.format(free_count))
 
@@ -159,7 +159,7 @@ def potential_start_indexes(trial_list, lag):
     a copy of the trial list shifted up by lag+1 slots, and seeing where
     both lists are blank.
     """
-    start_blanks = trial_list.stim_number.isnull()
+    start_blanks = trial_list.stim_bin_index.isnull()
     end_blanks = start_blanks.shift(-1 * (lag + 1))
     matches = start_blanks & end_blanks
     return list(trial_list.index[matches])

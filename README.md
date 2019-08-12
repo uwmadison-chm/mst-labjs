@@ -36,8 +36,9 @@ To resize how the image displays, change it on both the "Stimulus" and
 
 ## TODO
 
+- Tests and implementation for order filler code
 - Confirm we store:
     PPT, session #, trial #, stim info, type_code (based on python), condition, lag, LBin (??), time, start time, correct, response time
-- Embed 1000 (or whatever) lag sets
-- Figure out what all the "bin" stuff is for
+- Embed 1000 (or whatever) lag orderings sets
+- Embed images? Use CDN?
 
