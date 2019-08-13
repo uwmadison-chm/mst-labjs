@@ -58,7 +58,7 @@ describe('OrderFiller', function() {
     });
   });
 
-  describe('should insert stimuli correctly', function() {
+  describe('should create the three pools of stimuli', function() {
     it('creates simple pools', function() {
       var pool = o.createPool(10);
       assert.equal(pool.length, 10);
@@ -88,7 +88,6 @@ describe('OrderFiller', function() {
 
       var totals = [0, 0, 0, 0, 0, 0];
 
-      debugger;
       for (var i = 0; i < pool.length; i++) {
         var diff = o.lureDifficulty[String(pool[i])]
         totals[Number(diff)]++;
@@ -105,7 +104,23 @@ describe('OrderFiller', function() {
       assert.isAtMost(stimuli, 192);
     });
 
-    it('foils are unique', function () {
+    it('correctly removes given stimuli', function() {
+      o.removeStimuli("190");
+      assert.equal(o.availableStimuli.length, 191);
+    });
+
+    it('removes stimuli while building lure pool', function() {
+      assert.equal(o.availableStimuli.length, 192);
+      o.createLurePool(12);
+      assert.equal(o.availableStimuli.length, 180);
+    });
+
+    it('removes all available stimuli when pools are built', function() {
+      o.createPools();
+      assert.equal(o.availableStimuli.length, 0);
+    });
+
+    it('foils are unique in pools', function() {
       o.createPools();
       for (var i = 0; i < o.foils.length; i++) {
         assert.notInclude(o.repeats, o.foils[i]);
@@ -113,7 +128,7 @@ describe('OrderFiller', function() {
       }
     });
 
-    it('lures are unique', function () {
+    it('lures are unique in pools', function() {
       o.createPools();
       for (var i = 0; i < o.lures.length; i++) {
         assert.notInclude(o.repeats, o.lures[i]);
@@ -121,16 +136,76 @@ describe('OrderFiller', function() {
       }
     });
 
-    it('repeats are unique', function () {
+    it('repeats are unique in pools', function() {
       o.createPools();
       for (var i = 0; i < o.repeats.length; i++) {
         assert.notInclude(o.lures, o.repeats[i]);
         assert.notInclude(o.foils, o.repeats[i]);
       }
     });
+  });
 
 
-    it('lures are paired');
-    it('repeats are paired');
+  describe('should insert stimuli correctly', function() {
+    var searchTrials = function(trials, filter, operation) {
+      for (var i = 0; i < trials.length; i++) {
+        if (filter(trials[i])) {
+          for (var j = 0; j < trials.length; j++) {
+            if (i != j) {
+              operation(trials[i], trials[j]);
+            }
+          }
+        }
+      }
+    };
+
+    var checkPairs = function(trials, kind) {
+      var repeats = {};
+      searchTrials(trials,
+        function(x) {
+          return x.trial_type == kind;
+        },
+        function(one, two) {
+          if (one.stimulus_number == two.stimulus_number) {
+            assert.equal(two.trial_type, kind);
+            repeats[one.stimulus_number] = repeats[one.stimulus_number] || 0;
+            repeats[one.stimulus_number]++;
+          }
+        }
+      );
+      for (var k in Object.keys(repeats)) {
+        assert.equal(repeats[k], 1);
+      }
+    };
+
+
+    it('generates trial list', function() {
+      var trials = o.trialList();
+      assert.equal(trials.length, 320);
+    });
+
+    it('foils are unique in trial list', function() {
+      var trials = o.trialList();
+      debugger;
+      searchTrials(trials,
+        function(x) {
+          return x.trial_type == "foil";
+        },
+        function(one, two) {
+          assert.notEqual(one.stimulus_number, two.stimulus_number, `Should not have found something overlapping a foil: ${JSON.stringify(one)} vs ${JSON.stringify(two)}`);
+        }
+      );
+    });
+
+    it.skip('lures happen with an A and a B in trial list', function() {
+      var trials = o.trialList();
+      checkPairs(trials, "lure");
+    });
+
+    it.skip('repeats happen with an A and a B in trial list', function() {
+      var trials = o.trialList();
+      checkPairs(trials, "repeat");
+    });
+
   });
 });

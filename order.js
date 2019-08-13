@@ -10,6 +10,7 @@ module.exports = class OrderFiller {
       this.rng = seedOrRng;
     }
     this.order = order;
+    this.trials = null;
     this.lureDifficulty = lureDifficulty;
     this.availableStimuli = [...Array(193).keys()].slice(1);
   }
@@ -21,7 +22,7 @@ module.exports = class OrderFiller {
   }
 
   removeStimuli(x) {
-    var index = this.availableStimuli.indexOf(x);
+    var index = this.availableStimuli.indexOf(String(x));
     this.availableStimuli.splice(index, 1);
   }
 
@@ -58,7 +59,7 @@ module.exports = class OrderFiller {
       var index = bin.length * this.rng() | 0;
       var value = bin.splice(index, 1)[0];
       pool.push(value);
-      // Also remove from the total available pool
+      // Also remove from the total available stimulus pool
       this.removeStimuli(value);
     }
     return pool;
@@ -82,10 +83,52 @@ module.exports = class OrderFiller {
 
     // Lures are pulled first, to balance according to lureDifficulty
     this.lures = this.createLurePool(size);
-    // Remove lures from available now
-
     this.repeats = this.createPool(size);
     this.foils = this.createPool(size);
+  }
+
+  makeTrial(order) {
+    var index = order.stim_bin_index - 1;
+    var bin;
+    var stimulus_letter;
+    switch(order.trial_type) {
+      case "lure":
+        bin = this.lures;
+        stimulus_letter = order.repetition;
+        break;
+      case "repeat":
+        bin = this.repeats;
+        stimulus_letter = "a";
+        break;
+      default:
+        stimulus_letter = "a";
+        bin = this.foils;
+    }
+    return {
+      // force numeric
+      "stimulus_number": Number(bin[Number(index)]),
+      "stimulus_letter": stimulus_letter,
+      "trial_type": order.trial_type,
+      "repetition": order.repetition,
+      "lag": order.lag,
+      "trial_number": order.trial_number,
+    }
+  }
+
+  trialList() {
+    // Must cache this, since RNG is used to generate
+    if (this.trials) {
+      return this.trials;
+    }
+    if (!this.lures) {
+      this.createPools();
+    }
+    var trials = [];
+    for (var i = 0; i < this.order.length; i++) {
+      trials.push(this.makeTrial(this.order[i]));
+    }
+    this.trials = trials;
+    return trials;
   }
 }
 
