@@ -20,6 +20,11 @@ module.exports = class OrderFiller {
     return value[0];
   }
 
+  removeStimuli(x) {
+    var index = this.availableStimuli.indexOf(x);
+    this.availableStimuli.splice(index, 1);
+  }
+
   buildLureBin(n) {
     var bin = [];
     for (var k in Object.keys(this.lureDifficulty)) {
@@ -51,8 +56,10 @@ module.exports = class OrderFiller {
       var bin = this.lureBins[(i % 5) + 1];
       // Pick one from chosen bin
       var index = bin.length * this.rng() | 0;
-      var value = bin.splice(index, 1);
+      var value = bin.splice(index, 1)[0];
       pool.push(value);
+      // Also remove from the total available pool
+      this.removeStimuli(value);
     }
     return pool;
   }
@@ -68,12 +75,17 @@ module.exports = class OrderFiller {
     return pool;
   }
 
-  createPools() {
+  createPools(size) {
+    if (!size) {
+      size = 64;
+    }
+
     // Lures are pulled first, to balance according to lureDifficulty
-    this.lures = this.createLurePool(64);
-    // TODO: remove lures from available
-    this.repeats = this.createPool(64);
-    this.foils = this.createPool(64);
+    this.lures = this.createLurePool(size);
+    // Remove lures from available now
+
+    this.repeats = this.createPool(size);
+    this.foils = this.createPool(size);
   }
 }
 

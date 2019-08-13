@@ -82,20 +82,19 @@ describe('OrderFiller', function() {
       assert.equal(o.lureBins[5].length, 38);
     });
 
-    it.only('creates balanced lure pools', function() {
-      var pool = o.createLurePool(5);
-      assert.equal(pool.length, 5);
+    it('creates balanced lure pools', function() {
+      var pool = o.createLurePool(15);
+      assert.equal(pool.length, 15);
 
       var totals = [0, 0, 0, 0, 0, 0];
 
-      for (var x in pool) {
-        var diff = o.lureDifficulty[String(x)]
-        console.log("Difficulty of lure for stim:", diff, x);
-        totals[diff]++;
+      debugger;
+      for (var i = 0; i < pool.length; i++) {
+        var diff = o.lureDifficulty[String(pool[i])]
+        totals[Number(diff)]++;
       }
-      console.log(totals);
       for (var i = 1; i <= 5; i++) {
-        assert.equal(totals[i], 1, `Pool ${i} doesn't have one thing: ${totals[i]}`);
+        assert.equal(totals[i], 3, `Pool ${i} should have 3 items: ${totals[i]}`);
       }
     });
 
@@ -106,10 +105,32 @@ describe('OrderFiller', function() {
       assert.isAtMost(stimuli, 192);
     });
 
-    it('foils are unique');
-    it('lures are unique');
+    it('foils are unique', function () {
+      o.createPools();
+      for (var i = 0; i < o.foils.length; i++) {
+        assert.notInclude(o.repeats, o.foils[i]);
+        assert.notInclude(o.lures, o.foils[i]);
+      }
+    });
+
+    it('lures are unique', function () {
+      o.createPools();
+      for (var i = 0; i < o.lures.length; i++) {
+        assert.notInclude(o.repeats, o.lures[i]);
+        assert.notInclude(o.foils, o.lures[i]);
+      }
+    });
+
+    it('repeats are unique', function () {
+      o.createPools();
+      for (var i = 0; i < o.repeats.length; i++) {
+        assert.notInclude(o.lures, o.repeats[i]);
+        assert.notInclude(o.foils, o.repeats[i]);
+      }
+    });
+
+
     it('lures are paired');
-    it('repeats are unique');
     it('repeats are paired');
   });
 });
