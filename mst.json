@@ -129,9 +129,9 @@
         "rows": [
           [
             {
-              "title": "",
-              "message": "",
-              "code": ""
+              "title": "Init parameters",
+              "message": "before:prepare",
+              "code": "// All this because IE is still in use in the wild at 1%\n// and doesn't support getting parameters from the query string\nfunction getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, '\\\\$&');\n    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, ' '));\n}\n\nthis.state.ppt = getParameterByName('PPT') || 0;\nthis.state.session = getParameterByName('session') || 0;\nthis.state.stimulusSet = getParameterByName('stimulusSet') || 1;\n\n// Make a predictable pseudorandom number generator based on ppt and session id\nthis.state.rng = new Math.seedrandom(String(this.state.ppt) + '/' + String(this.state.session));\nthis.state.orderNum = Math.trunc(this.state.rng() * 1000);\nthis.state.orderNum = 1; // for testing"
             }
           ]
         ]
@@ -141,7 +141,7 @@
         600
       ],
       "title": "Instructions",
-      "_tab": "Content"
+      "_tab": "Scripts"
     },
     "5": {
       "id": "5",
@@ -198,12 +198,12 @@
             {
               "title": "Load CSV",
               "message": "before:prepare",
-              "code": "function getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, '\\\\$&');\n    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, ' '));\n}\n\nthis.options.ppt = getParameterByName('PPT') || 0;\nthis.options.session = getParameterByName('session') || 0;\n\n// Make a predictable pseudorandom number generator based on ppt and session id\nvar rng = new Math.seedrandom(String(this.options.ppt) + '/' + String(this.options.session));\nvar orderNum = Math.trunc(rng() * 1000);\nvar orderNum = 1; // for testing\n\n// Use a specific ordering file based on that number\nconst response = await fetch(this.files['order' + orderNum + '.json'])\nthis.options.templateParameters = await response.json()\n"
+              "code": "// Use a specific ordering file based on the randomized orderNum\nconst binResponse = await fetch(this.files['order' + this.state.orderNum + '.json'])\n var binOrder = await binResponse.json()\n\n const lureResponse = await fetch(this.files['set' + this.state.stimulusSet + '.json'])\n var lureDifficulty = await lureResponse.json()\n\n // Now we need to take that order and randomize stimuli into it,\n // pulling evenly from the lure difficulty bins\n\n var filledOrder = generateStimuliOrder(binOrder, lureDifficulty)\n\n this.options.templateParameters = filledOrder;\n"
             }
           ]
         ]
       },
-      "title": "Trial Loop",
+      "title": "Continuous Trials",
       "_tab": "Scripts",
       "timeout": ""
     },
@@ -548,7 +548,7 @@
       "_tab": "Behavior",
       "timeout": "",
       "tardy": false,
-      "correctResponse": ""
+      "correctResponse": "${ parameters.correct }"
     },
     "9": {
       "id": "9",
@@ -588,14 +588,15 @@
             {
               "title": "Set up image",
               "message": "before:prepare",
-              "code": "this.parameters.image = String(this.parameters.stim_number).padStart(3, '0') + (this.parameters.repetition == \"x\" ? \"a\" : this.parameters.repetition);"
+              "code": "// If it's a foil or a lure, we use whatever \"repetition\" got set to.\n// If it's a repeat, we want to force always showing the \"a\" stimulus.\nvar letter = this.parameters.trial_type == 'repeat' ? \"a\" : this.parameters.repetition;\n\nthis.parameters.image = String(this.parameters.stim_number).padStart(3, '0') + letter;\n\nif (this.parameters.trial_type == 'repeat' && this.parameters.repetition == 'b') {\n  this.parameters.correct_answer = 'j';\n} else if (this.parameters.trial_type == 'lure' && this.parameters.repetition == 'b') {\n  this.parameters.correct_answer = 'k';\n} else {\n  this.parameters.correct_answer = 'l';  \n}\n"
             }
           ]
         ]
       },
       "title": "Sequence",
-      "_tab": "Behavior",
-      "timeout": "2500"
+      "_tab": "Scripts",
+      "timeout": "2500",
+      "correctResponse": ""
     },
     "12": {
       "id": "12",
