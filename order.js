@@ -22,7 +22,7 @@ module.exports = class OrderFiller {
   }
 
   removeStimuli(x) {
-    var index = this.availableStimuli.indexOf(String(x));
+    var index = this.availableStimuli.indexOf(x);
     this.availableStimuli.splice(index, 1);
   }
 
@@ -31,7 +31,7 @@ module.exports = class OrderFiller {
     for (var k in Object.keys(this.lureDifficulty)) {
       var difficulty = this.lureDifficulty[k];
       if (String(difficulty) == String(n)) {
-        bin.push(k);
+        bin.push(parseInt(k));
       }
     }
     return bin;

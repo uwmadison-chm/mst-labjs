@@ -150,7 +150,7 @@ describe('OrderFiller', function() {
     var searchTrials = function(trials, filter, operation) {
       for (var i = 0; i < trials.length; i++) {
         if (filter(trials[i])) {
-          for (var j = 0; j < trials.length; j++) {
+          for (var j = i+1; j < trials.length; j++) {
             if (i != j) {
               operation(trials[i], trials[j]);
             }
@@ -168,12 +168,17 @@ describe('OrderFiller', function() {
         function(one, two) {
           if (one.stimulus_number == two.stimulus_number) {
             assert.equal(two.trial_type, kind);
+            if (two.trial_type == 'lure') {
+              assert.equal(two.stimulus_letter, 'b');
+            } else if (two.trial_type == 'repeat') {
+              assert.equal(two.stimulus_letter, 'a');
+            }
             repeats[one.stimulus_number] = repeats[one.stimulus_number] || 0;
             repeats[one.stimulus_number]++;
           }
         }
       );
-      for (var k in Object.keys(repeats)) {
+      for (var k in repeats) {
         assert.equal(repeats[k], 1);
       }
     };
@@ -186,7 +191,6 @@ describe('OrderFiller', function() {
 
     it('foils are unique in trial list', function() {
       var trials = o.trialList();
-      debugger;
       searchTrials(trials,
         function(x) {
           return x.trial_type == "foil";
@@ -197,12 +201,12 @@ describe('OrderFiller', function() {
       );
     });
 
-    it.skip('lures happen with an A and a B in trial list', function() {
+    it('lures happen with an A and a B in trial list', function() {
       var trials = o.trialList();
       checkPairs(trials, "lure");
     });
 
-    it.skip('repeats happen with an A and a B in trial list', function() {
+    it('repeats happen with an A and a B in trial list', function() {
       var trials = o.trialList();
       checkPairs(trials, "repeat");
     });

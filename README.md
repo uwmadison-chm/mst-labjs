@@ -34,7 +34,24 @@ To resize how the image displays, change it on both the "Stimulus" and
 "Stimulus after keypress" screens in the [lab.js Builder](https://labjs.felixhenninger.com/).
 
 
-## TODO
+## Development
+
+### Tests
+
+To run the javascript tests, do
+
+    npm install
+    npm test
+
+### Debugging
+
+To debug, put `debugger;` in the code and then
+
+    npm b
+
+Open Chrome and go to chrome://inspect to connect.
+
+### TODO
 
 - Tests and implementation for order filler code
 - Confirm we store:
