@@ -36,6 +36,14 @@ To resize how the image displays, change it on both the "Stimulus" and
 
 ## Development
 
+### OrderFiller
+
+order.js has tests in tests/
+
+I had a hard time getting order.js to load in lab.js land,
+so I made a variant, order-labjs.js, which is included in the
+"static" section of the mst.js template for lab.js
+
 ### Tests
 
 To run the javascript tests, do
@@ -50,12 +58,4 @@ To debug, put `debugger;` in the code and then
     npm b
 
 Open Chrome and go to chrome://inspect to connect.
-
-### TODO
-
-- Tests and implementation for order filler code
-- Confirm we store:
-    PPT, session #, trial #, stim info, type_code (based on python), condition, lag, LBin (??), time, start time, correct, response time
-- Embed 1000 (or whatever) lag orderings sets
-- Embed images? Use CDN?
 
