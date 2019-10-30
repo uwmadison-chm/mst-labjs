@@ -1,10 +1,13 @@
 # Mnemonic Similarity Task for lab.js
 
-A simple online MST implementation in lab.js,
+A simple online continuous MST implementation in lab.js,
 based on [this PsychoPy repository](https://github.com/celstark/MST) from the Stark lab.
 
 Pseudorandom lag order is based on ppt and session IDs, passed as "PPT" and 
-"Session" in the querystring.
+"session" in the querystring.
+
+Stimulus set defaults to 1, but you can pick others by passing "stimulusSet" 
+in the querystring.
 
 Lag orders have been built with Nate Vack's `make_lags.py` script, included,
 and altered to output JSON. To use your own orderings, load `mst.js` in the 
@@ -16,11 +19,11 @@ embedded `orderN.txt` files on the Trial Loop.
 
 See the [Lab.js documentation on working with Qualtrics](https://labjs.readthedocs.io/en/latest/learn/deploy/3a-qualtrics.html).
 
-Then, when pasting the embed source, change the iframe src to pass PPT and 
-session variables like this:
+Then, when pasting the embed source, change the iframe src to pass participant 
+id and session variables like this:
 
     <iframe
-      src="//some-location?PPT=${e://Field/PPT}&session=${e://Field/Session}"
+      src="//some-location?PPT=${e://Field/PPTID}&session=${e://Field/session}"
       style="width: 100%; min-height: 600px; border: none;"
     ></iframe>
 
