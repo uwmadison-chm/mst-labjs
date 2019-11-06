@@ -2,8 +2,12 @@ import logging
 import sys
 import csv
 import json
+import os
+import numpy as np
 
 csv.field_size_limit(sys.maxsize)
+
+# Some of this is mirrored on the Stark lab's psychopy implementation
 
 with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
     reader = csv.DictReader(tsvfile, dialect=csv.excel_tab)
@@ -20,14 +24,36 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
         else:
             first = data[0]
             ppt = first['ppt']
+            stim_set = first['stimulusSet']
+            ppt_dir = os.path.join("output", ppt)
 
-            with open(f'output/{ppt}.txt', mode='w') as out:
-                out.write(f"PPT: {ppt}")
-                out.write(f"Session: {first['session']}")
-                out.write(f"Stimulus set: {first['stimulusSet']}")
-                out.write(f"Ordering file number: {first['orderNum']}")
-                out.write(f"User agent: {first['meta']['userAgent']}")
+            os.makedirs(ppt_dir, exist_ok=True)
+            with open(os.path.join(ppt_dir, "metadata.txt"), mode='w') as out:
+                out.write(f"PPT: {ppt}\n")
+                out.write(f"Session: {first['session']}\n")
+                out.write(f"Stimulus set: {stim_set}\n")
+                out.write(f"Ordering file number: {first['orderNum']}\n")
+                out.write(f"User agent: {first['meta']['userAgent']}\n")
+                out.write('\n')
 
+            # Stark analysis stuff
+            ncorrect = 0
+            trial_counter = 0
+            TLF_trials = np.zeros(3)
+            TLF_response_matrix = np.zeros((3,3))  # Rows = O,(S),N  Cols = T,L,R
+            lure_bin_matrix = np.zeros((4,5)) # Rows: O,S,N,NR  Cols=Lure bins
+            
+            # Load the bin file from json
+            with open(f"../lag_difficulty_for_sets/set{stim_set}.json") as set_file:
+                set_bins = json.load(set_file)
+
+            with open(os.path.join(ppt_dir, "trials.txt"), mode='w') as out:
+                writer = csv.writer(out, delimiter='\t')
+                writer.writerow([
+                    'Trial Number', 'Trial Type', 'Stimulus Number',
+                    'Repetition', 'Lag',
+                    'Correct Was', 'Participant Response',
+                    'Response Time'])
                 for comp in data[1:]:
                     if comp['sender'] == 'Stimulus':
                         if 'correct_answer' in comp:
@@ -39,8 +65,93 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                             response = comp['response']
                             duration = comp['duration']
                         else:
-                            response = "NO RESPONSE"
+                            response = "NA"
                             duration = ""
 
-                        print(f"Trial {comp['trial_number']}: {comp['trial_type']}, {comp['stimulus_number']} {comp['repetition']} with lag {comp['lag']}: correct was {correctWas}, ppt entered {response} in {duration}")
+                        trial_counter += 1
+                        if response == correctWas:
+                            ncorrect += 1
+
+                        writer.writerow([
+                            comp['trial_number'],
+                            comp['trial_type'],
+                            comp['stimulus_number'],
+                            comp['repetition'],
+                            comp['lag'],
+                            correctWas,
+                            response,
+                            duration])
+
+                        # Calculating totals for Stark analysis
+                        if response == 'old':
+                            response_index = 0
+                        elif response == 'similar':
+                            response_index = 1
+                        elif response == 'new':
+                            response_index = 2
+                        elif response == 'NA':
+                            response_index = 3
+                        else:
+                            raise f"Unknown response: {response}"
+
+                        if comp['trial_type'] == 'repeat' and comp['repetition'] == 'b':
+                            trial_type = 0
+                        elif comp['trial_type'] == 'lure' and comp['repetition'] == 'b':
+                            trial_type = 1
+                            # Need to do lure bin stuff here
+                            # Kind of wacky coercion because set_bins is a hash of string -> string
+                            bin_index = int(set_bins[str(comp['stimulus_number'])])
+                            lure_bin_matrix[response_index,int(bin_index-1)] += 1
+                        else:
+                            trial_type = 2
+                        TLF_trials[trial_type] += 1
+                        if response != 'NA':
+                            TLF_response_matrix[response_index,trial_type] += 1
+
+            # Again, all this is from the Stark analysis
+            with open(os.path.join(ppt_dir, "stats.txt"), mode='w') as log:
+                log.write('\nValid responses:\nTargets, {0:.0f}\nlures, {1:.0f}\nfoils, {2:.0f}'.format(
+                    TLF_trials[0], TLF_trials[1], TLF_trials[2]))
+                log.write('\nCorrected rates\n')
+                log.write('\nRateMatrix,Targ,Lure,Foil\n')
+                # Fix up any no-response cell here so we don't divide by zero
+                TLF_trials[TLF_trials==0.0]=0.00001
+                log.write('Old,{0:.2f},{1:.2f},{2:.2f}\n'.format(
+                    TLF_response_matrix[0,0] / TLF_trials[0], 
+                    TLF_response_matrix[0,1] / TLF_trials[1],
+                    TLF_response_matrix[0,2] / TLF_trials[2]))
+                log.write('Similar,{0:.2f},{1:.2f},{2:.2f}\n'.format(
+                    TLF_response_matrix[1,0] / TLF_trials[0], 
+                    TLF_response_matrix[1,1] / TLF_trials[1],
+                    TLF_response_matrix[1,2] / TLF_trials[2]))
+                log.write('New,{0:.2f},{1:.2f},{2:.2f}\n'.format(
+                    TLF_response_matrix[2,0] / TLF_trials[0], 
+                    TLF_response_matrix[2,1] / TLF_trials[1],
+                    TLF_response_matrix[2,2] / TLF_trials[2]))
+
+                log.write('\nRaw counts')
+                log.write('\nRawRespMatrix,Targ,Lure,Foil\n')
+                log.write('Old,{0:.0f},{1:.0f},{2:.0f}\n'.format(
+                    TLF_response_matrix[0,0], TLF_response_matrix[0,1],TLF_response_matrix[0,2]))
+                log.write('Similar,{0:.0f},{1:.0f},{2:.0f}\n'.format(
+                    TLF_response_matrix[1,0], TLF_response_matrix[1,1],TLF_response_matrix[1,2]))
+                log.write('New,{0:.0f},{1:.0f},{2:.0f}\n'.format(
+                    TLF_response_matrix[2,0], TLF_response_matrix[2,1],TLF_response_matrix[2,2]))
+                
+                log.write('\n\nLureRawRespMatrix,Bin1,Bin2,Bin3,Bin4,Bin5\n')
+                log.write('Old,{0:.0f},{1:.0f},{2:.0f},{3:.0f},{4:.0f}\n'.format(
+                    lure_bin_matrix[0,0], lure_bin_matrix[0,1], lure_bin_matrix[0,2], lure_bin_matrix[0,3], lure_bin_matrix[0,4]))
+                log.write('Similar,{0:.0f},{1:.0f},{2:.0f},{3:.0f},{4:.0f}\n'.format(
+                    lure_bin_matrix[1,0], lure_bin_matrix[1,1], lure_bin_matrix[1,2], lure_bin_matrix[1,3], lure_bin_matrix[1,4]))
+                log.write('New,{0:.0f},{1:.0f},{2:.0f},{3:.0f},{4:.0f}\n'.format(
+                    lure_bin_matrix[2,0], lure_bin_matrix[2,1], lure_bin_matrix[2,2], lure_bin_matrix[2,3], lure_bin_matrix[2,4]))
+                log.write('NR,{0:.0f},{1:.0f},{2:.0f},{3:.0f},{4:.0f}\n'.format(
+                    lure_bin_matrix[3,0], lure_bin_matrix[3,1], lure_bin_matrix[3,2], lure_bin_matrix[3,3], lure_bin_matrix[3,4]))
+
+                log.write('\nPercent-correct (corrected),{0:.2}\n'.format(ncorrect / TLF_trials.sum()))
+                log.write('Percent-correct (raw),{0:.2}\n'.format(ncorrect / trial_counter))
+
+                hit_rate = TLF_response_matrix[0,0] / TLF_trials[0]
+                false_rate = TLF_response_matrix[0,2] / TLF_trials[2]
+                log.write('\nCorrected recognition (p(Old|Target)-p(Old|Foil)), {0:.2f}\n'.format(hit_rate - false_rate))
 
