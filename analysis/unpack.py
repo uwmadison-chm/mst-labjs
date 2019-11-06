@@ -7,7 +7,8 @@ import numpy as np
 
 csv.field_size_limit(sys.maxsize)
 
-# Some of this is mirrored on the Stark lab's psychopy implementation
+# Some of this is mirrored from the Stark lab's psychopy implementation
+# Sorry it's kinda monolithic and ugly, as usual I was in a hurry
 
 with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
     reader = csv.DictReader(tsvfile, dialect=csv.excel_tab)
@@ -51,9 +52,10 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                 writer = csv.writer(out, delimiter='\t')
                 writer.writerow([
                     'Trial Number', 'Trial Type', 'Stimulus Number',
-                    'Repetition', 'Lag',
+                    'Repetition', 'Lag', 'Lure Bin',
                     'Correct Was', 'Participant Response',
                     'Response Time'])
+
                 for comp in data[1:]:
                     if comp['sender'] == 'Stimulus':
                         if 'correct_answer' in comp:
@@ -72,15 +74,9 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                         if response == correctWas:
                             ncorrect += 1
 
-                        writer.writerow([
-                            comp['trial_number'],
-                            comp['trial_type'],
-                            comp['stimulus_number'],
-                            comp['repetition'],
-                            comp['lag'],
-                            correctWas,
-                            response,
-                            duration])
+                        # Find the lure bin for difficulty.
+                        # Kind of wacky coercion because set_bins is a hash of string -> string
+                        lure_bin_index = int(set_bins[str(comp['stimulus_number'])])
 
                         # Calculating totals for Stark analysis
                         if response == 'old':
@@ -98,15 +94,25 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                             trial_type = 0
                         elif comp['trial_type'] == 'lure' and comp['repetition'] == 'b':
                             trial_type = 1
-                            # Need to do lure bin stuff here
-                            # Kind of wacky coercion because set_bins is a hash of string -> string
-                            bin_index = int(set_bins[str(comp['stimulus_number'])])
-                            lure_bin_matrix[response_index,int(bin_index-1)] += 1
+                            # Need to do add one to this response and lure bin
+                            lure_bin_matrix[response_index,int(lure_bin_index-1)] += 1
                         else:
                             trial_type = 2
                         TLF_trials[trial_type] += 1
                         if response != 'NA':
                             TLF_response_matrix[response_index,trial_type] += 1
+
+                        writer.writerow([
+                            comp['trial_number'],
+                            comp['trial_type'],
+                            comp['stimulus_number'],
+                            comp['repetition'],
+                            comp['lag'],
+                            lure_bin_index,
+                            correctWas,
+                            response,
+                            duration])
+
 
             # Again, all this is from the Stark analysis
             with open(os.path.join(ppt_dir, "stats.txt"), mode='w') as log:
