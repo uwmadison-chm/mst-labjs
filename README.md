@@ -28,13 +28,26 @@ id and session variables like this:
     ></iframe>
 
 
-## Image size
+### Image size
 
 The image stimulus is on two separate "canvas" screens, because of the 
 keypress detection and needing to show user feedback after keypress.
 
 To resize how the image displays, change it on both the "Stimulus" and 
 "Stimulus after keypress" screens in the [lab.js Builder](https://labjs.felixhenninger.com/).
+
+
+## Analysis
+
+See the [analysis](analysis/) directory.
+
+It should be as simple as running `unpack.py` on your results.
+
+    cd REPO/analysis
+    mv ~/Downloads/qualtrics_results.tsv .
+    python3 unpack.py qualtrics_results.tsv
+
+Files will get dumped to `analysis/output`.
 
 
 ## Development
