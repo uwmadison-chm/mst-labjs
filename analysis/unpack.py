@@ -65,10 +65,10 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
 
                         if 'response' in comp:
                             response = comp['response']
-                            duration = comp['duration']
+                            duration = int(comp['duration'])
                         else:
                             response = "NA"
-                            duration = ""
+                            duration = "NA"
 
                         trial_counter += 1
                         if response == correctWas:
@@ -98,8 +98,8 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                             lure_bin_matrix[response_index,int(lure_bin_index-1)] += 1
                         else:
                             trial_type = 2
-                        TLF_trials[trial_type] += 1
                         if response != 'NA':
+                            TLF_trials[trial_type] += 1
                             TLF_response_matrix[response_index,trial_type] += 1
 
                         writer.writerow([
@@ -154,10 +154,16 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                 log.write('NR,{0:.0f},{1:.0f},{2:.0f},{3:.0f},{4:.0f}\n'.format(
                     lure_bin_matrix[3,0], lure_bin_matrix[3,1], lure_bin_matrix[3,2], lure_bin_matrix[3,3], lure_bin_matrix[3,4]))
 
+                log.write('\nCorrect: {0} Trials sum {1} Trial counter {2}\n'.format(ncorrect, TLF_trials.sum(), trial_counter))
+
                 log.write('\nPercent-correct (corrected),{0:.2}\n'.format(ncorrect / TLF_trials.sum()))
                 log.write('Percent-correct (raw),{0:.2}\n'.format(ncorrect / trial_counter))
 
                 hit_rate = TLF_response_matrix[0,0] / TLF_trials[0]
                 false_rate = TLF_response_matrix[0,2] / TLF_trials[2]
                 log.write('\nCorrected recognition (p(Old|Target)-p(Old|Foil)), {0:.2f}\n'.format(hit_rate - false_rate))
+
+                sim_lure_rate = TLF_response_matrix[1,1] / TLF_trials[1]
+                sim_foil_rate = TLF_response_matrix[1,2] / TLF_trials[2]
+                log.write('\nLDI,{0:.2f}\n'.format(sim_lure_rate - sim_foil_rate))
 
