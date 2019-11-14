@@ -3,6 +3,11 @@
 A simple online continuous MST implementation in lab.js,
 based on [this PsychoPy repository](https://github.com/celstark/MST) from the Stark lab.
 
+*PLEASE NOTE*, if you are going to use this task you will need to host the 
+stimuli images (found in the Stark repository) or use a different CDN. The 
+image location can be changed in the "Set up image" script on the Sequence in 
+the experiment.
+
 Pseudorandom lag order is based on ppt and session IDs, passed as "PPT" and 
 "session" in the querystring.
 
