@@ -9,6 +9,7 @@ csv.field_size_limit(sys.maxsize)
 
 # Some of this is mirrored from the Stark lab's psychopy implementation
 # Sorry it's kinda monolithic and ugly, as usual I was in a hurry
+global trial_counter
 
 with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
     reader = csv.DictReader(tsvfile, dialect=csv.excel_tab)
@@ -58,6 +59,8 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
 
                 for comp in data[1:]:
                     if comp['sender'] == 'Stimulus':
+                        trial_counter += 1
+
                         if 'correct_answer' in comp:
                             correctWas = comp['correct_answer']
                         else:
@@ -65,12 +68,15 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
 
                         if 'response' in comp:
                             response = comp['response']
-                            duration = int(comp['duration'])
+                            try:
+                                duration = int(comp['duration'])
+                            except:
+                                duration = "NA"
+                                
                         else:
                             response = "NA"
                             duration = "NA"
 
-                        trial_counter += 1
                         if response == correctWas:
                             ncorrect += 1
 
