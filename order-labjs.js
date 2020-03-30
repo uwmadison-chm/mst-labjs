@@ -126,6 +126,88 @@ class OrderFiller {
     this.trials = trials;
     return trials;
   }
-}
 
+  makeSimpleTrial(index, bin, letter, repetition) {
+    return {
+      // force numeric
+      "stimulus_number": Number(bin[Number(index)]),
+      "stimulus_letter": letter,
+      "trial_type": 'repeat',
+      "repetition": repetition,
+      "lag": undefined,
+    }
+  }
+
+  shuffleAndSetTrialNumber(set, offsetIndex) {
+    function shuffle(a) {
+        var j, x, i;
+        for (i = a.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            x = a[i];
+            a[i] = a[j];
+            a[j] = x;
+        }
+        return a;
+    }
+    shuffle(set);
+    for (var i = 0; i < set.length; i++) {
+      set[i].trial_number = i + 1;
+    }
+    
+    return set;
+  }
+
+  studyAndTestTrialList() {
+    // study and test version of task (non-continuous) requires simpler orders
+    // that only balance lure difficulty and then create:
+    //  * study list:
+    //    64 to-be-repeated
+    //    64 to-be-lured
+    //  * test list
+    //    64 repeats
+    //    64 lures
+    //    64 new
+    if (!this.lures) {
+      this.createPools();
+    }
+    var studyTrials = [];
+    var testTrials = [];
+
+    if (this.studyTrials) {
+      studyTrials = this.studyTrials;
+    } else {
+      for (var i = 0; i < 64; i++) {
+        studyTrials.push(this.makeSimpleTrial(i, this.repeats, 'a', 'a'))
+      }
+      for (var i = 0; i < 64; i++) {
+        studyTrials.push(this.makeSimpleTrial(i, this.lures, 'a', 'a'))
+      }
+
+      // shuffle and then fix trial numbers
+      this.studyTrials = this.shuffleAndSetTrialNumber(studyTrials);
+    }
+
+    if (this.testTrials) {
+      testTrials = this.testTrials;
+    } else {
+      for (var i = 0; i < 64; i++) {
+        testTrials.push(this.makeSimpleTrial(i, this.repeats, 'a', 'b'))
+      }
+      for (var i = 0; i < 64; i++) {
+        testTrials.push(this.makeSimpleTrial(i, this.lures, 'b', 'b'))
+      }
+      for (var i = 0; i < 64; i++) {
+        testTrials.push(this.makeSimpleTrial(i, this.foils, 'a', 'a'))
+      }
+
+      // shuffle and then fix trial numbers
+      this.testTrials = this.shuffleAndSetTrialNumber(testTrials);
+    }
+
+    return {
+      study: studyTrials,
+      test: testTrials
+    }
+  }
+}
 

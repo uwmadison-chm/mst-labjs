@@ -9,11 +9,33 @@ var seedrandom = require('seedrandom');
 var OrderFiller = require('../order');
 var o;
 
+function clone(x) {
+  return JSON.parse(JSON.stringify(x));
+}
+
+function searchTrials(trials, filter, operation) {
+  for (var i = 0; i < trials.length; i++) {
+    if (filter(trials[i])) {
+      for (var j = i+1; j < trials.length; j++) {
+        if (i != j) {
+          operation(trials[i], trials[j]);
+        }
+      }
+    }
+  }
+};
+
+function areUnique(trials, reason) {
+  searchTrials(trials,
+    function(x) { return true },
+    function(one, two) {
+      assert.notEqual(one.stimulus_number, two.stimulus_number, `${reason}: ${JSON.stringify(one)} vs ${JSON.stringify(two)}`);
+    }
+  );
+}
+
 describe('OrderFiller', function() {
   beforeEach(function() {
-    function clone(x) {
-      return JSON.parse(JSON.stringify(x));
-    }
     o = new OrderFiller('test', clone(order1), clone(set1));
   });
 
@@ -147,18 +169,6 @@ describe('OrderFiller', function() {
 
 
   describe('should insert stimuli correctly', function() {
-    var searchTrials = function(trials, filter, operation) {
-      for (var i = 0; i < trials.length; i++) {
-        if (filter(trials[i])) {
-          for (var j = i+1; j < trials.length; j++) {
-            if (i != j) {
-              operation(trials[i], trials[j]);
-            }
-          }
-        }
-      }
-    };
-
     var checkPairs = function(trials, kind) {
       var repeats = {};
       searchTrials(trials,
@@ -209,6 +219,73 @@ describe('OrderFiller', function() {
     it('repeats happen with an A and a B in trial list', function() {
       var trials = o.trialList();
       checkPairs(trials, "repeat");
+    });
+
+  });
+
+  describe('can create study/test style order', function() {
+    it('creates a study order', function() {
+      var study = o.studyAndTestTrialList().study;
+      assert.equal(study.length, 128);
+    });
+
+    it('creates a test order', function() {
+      var test = o.studyAndTestTrialList().test;
+      assert.equal(test.length, 192);
+    });
+
+    it('sets trial_number correctly', function() {
+      var test = o.studyAndTestTrialList().test;
+      assert.equal(test[0].trial_number, 1);
+      assert.equal(test[191].trial_number, 192);
+    });
+
+    it('stimuli are not sequential', function() {
+      var lists = o.studyAndTestTrialList();
+      checkSeq = function(stuff) {
+        assert(
+          !(
+            (stuff[0].stimulus_number == 1) &&
+            (stuff[1].stimulus_number == 2) &&
+            (stuff[2].stimulus_number == 3) &&
+            (stuff[3].stimulus_number == 4) &&
+            (stuff[4].stimulus_number == 5)
+          ),
+          "Things are sequential"
+        );
+      }
+      checkSeq(lists.study);
+      checkSeq(lists.test);
+    });
+
+    it('stimuli are not ordered the same in study and trial', function() {
+      var lists = o.studyAndTestTrialList();
+      assert(
+        !(
+          (lists.study[0].stimulus_number == lists.test[0].stimulus_number) &&
+          (lists.study[1].stimulus_number == lists.test[1].stimulus_number) &&
+          (lists.study[2].stimulus_number == lists.test[2].stimulus_number) &&
+          (lists.study[3].stimulus_number == lists.test[3].stimulus_number) &&
+          (lists.study[4].stimulus_number == lists.test[4].stimulus_number)
+        ),
+        "Lists are in identical order"
+      );
+    });
+
+    it('works with an undefined order', function() {
+      o = new OrderFiller('test', undefined, clone(set1));
+      var result = o.studyAndTestTrialList();
+      assert.equal(result.study.length, 128);
+    });
+
+    it('stimuli are unique in study list', function() {
+      var result = o.studyAndTestTrialList();
+      areUnique(result.study, 'Should not have found something overlapping in study list');
+    });
+
+    it('stimuli are unique in test list', function() {
+      var result = o.studyAndTestTrialList();
+      areUnique(result.test, 'Should not have found something overlapping in study list');
     });
 
   });
