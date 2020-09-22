@@ -143,17 +143,17 @@ module.exports = class OrderFiller {
   }
 
   shuffleAndSetTrialNumber(set, offsetIndex) {
-    function shuffle(a) {
+    function shuffle(a, rng) {
         var j, x, i;
         for (i = a.length - 1; i > 0; i--) {
-            j = Math.floor(Math.random() * (i + 1));
+            j = Math.floor(rng() * (i + 1));
             x = a[i];
             a[i] = a[j];
             a[j] = x;
         }
         return a;
     }
-    shuffle(set);
+    shuffle(set, this.rng);
     for (var i = 0; i < set.length; i++) {
       set[i].trial_number = i + 1;
     }

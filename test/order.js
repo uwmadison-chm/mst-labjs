@@ -34,6 +34,12 @@ function areUnique(trials, reason) {
   );
 }
 
+function areSame(chunk1, chunk2) {
+  for (var i = 0; i < chunk1.length; i++) {
+      assert.equal(chunk1[i].stimulus_number, chunk2[i].stimulus_number)
+  }
+}
+
 describe('OrderFiller', function() {
   beforeEach(function() {
     o = new OrderFiller('test', clone(order1), clone(set1));
@@ -286,6 +292,30 @@ describe('OrderFiller', function() {
     it('stimuli are unique in test list', function() {
       var result = o.studyAndTestTrialList();
       areUnique(result.test, 'Should not have found something overlapping in study list');
+    });
+
+    it('keeps same orders with same string key', function() {
+      o1 = new OrderFiller('test', undefined, clone(set1));
+      o2 = new OrderFiller('test', undefined, clone(set1));
+
+      var result1 = o1.studyAndTestTrialList();
+      var result2 = o2.studyAndTestTrialList();
+
+      areSame(result1.study, result2.study)
+      areSame(result1.test, result2.test)
+    });
+
+    it('keeps same orders with seedrandom generator with same starting key', function() {
+      var gen1 = seedrandom('so unique');
+      var gen2 = seedrandom('so unique');
+      var o1 = new OrderFiller(gen1, undefined, clone(set1));
+      var o2 = new OrderFiller(gen2, undefined, clone(set1));
+
+      var result1 = o1.studyAndTestTrialList();
+      var result2 = o2.studyAndTestTrialList();
+
+      areSame(result1.study, result2.study)
+      areSame(result1.test, result2.test)
     });
 
   });

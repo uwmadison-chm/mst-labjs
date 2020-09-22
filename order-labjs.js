@@ -1,3 +1,7 @@
+/*
+ * NOTE: This is a copy of order.js without the module.exports, so it can be 
+ * easily included and loaded in the lab.js task as a static file
+ */
 class OrderFiller {
   constructor(seedOrRng, order, lureDifficulty) {
     if (typeof seedOrRng === "string" || typeof seedOrRng === "number") {
@@ -139,17 +143,17 @@ class OrderFiller {
   }
 
   shuffleAndSetTrialNumber(set, offsetIndex) {
-    function shuffle(a) {
+    function shuffle(a, rng) {
         var j, x, i;
         for (i = a.length - 1; i > 0; i--) {
-            j = Math.floor(Math.random() * (i + 1));
+            j = Math.floor(rng() * (i + 1));
             x = a[i];
             a[i] = a[j];
             a[j] = x;
         }
         return a;
     }
-    shuffle(set);
+    shuffle(set, this.rng);
     for (var i = 0; i < set.length; i++) {
       set[i].trial_number = i + 1;
     }
@@ -210,4 +214,3 @@ class OrderFiller {
     }
   }
 }
-
