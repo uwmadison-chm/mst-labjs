@@ -5,13 +5,22 @@ import json
 import os
 import numpy as np
 
+import argparse
+
 csv.field_size_limit(sys.maxsize)
 
 # Some of this is mirrored from the Stark lab's psychopy implementation
 # Sorry it's kinda monolithic and ugly, as usual I was in a hurry
 global trial_counter
 
-with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
+parser = argparse.ArgumentParser()
+parser.add_argument("input")
+parser.add_argument("--studytest",
+        help="Run study/test version instead of continuous",
+        action="store_true")
+args = parser.parse_args()
+
+with open(args.input, newline='', encoding='utf16') as tsvfile:
     reader = csv.DictReader(tsvfile, dialect=csv.excel_tab)
     # First two rows out of Qualtrics are header-y stuff
     next(reader)
@@ -34,7 +43,8 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                 out.write(f"PPT: {ppt}\n")
                 out.write(f"Session: {first['session']}\n")
                 out.write(f"Stimulus set: {stim_set}\n")
-                out.write(f"Ordering file number: {first['orderNum']}\n")
+                if not args.studytest:
+                    out.write(f"Ordering file number: {first['orderNum']}\n")
                 out.write(f"User agent: {first['meta']['userAgent']}\n")
                 out.write('\n')
 
@@ -51,14 +61,21 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
 
             with open(os.path.join(ppt_dir, "trials.txt"), mode='w') as out:
                 writer = csv.writer(out, delimiter='\t')
-                writer.writerow([
+                header = [
                     'Trial Number', 'Trial Type', 'Stimulus Number',
                     'Repetition', 'Lag', 'Lure Bin',
                     'Correct Was', 'Participant Response',
-                    'Response Time'])
+                    'Response Time']
+                if args.studytest:
+                    header.remove('Lag')
+                            
+                writer.writerow(header)
 
                 for comp in data[1:]:
-                    if comp['sender'] == 'Stimulus':
+                    component_name = 'Stimulus'
+                    if args.studytest:
+                        component_name = 'Trial stimulus'
+                    if comp['sender'] == component_name:
                         trial_counter += 1
 
                         if 'correct_answer' in comp:
@@ -108,16 +125,18 @@ with open(sys.argv[1], newline='', encoding='utf16') as tsvfile:
                             TLF_trials[trial_type] += 1
                             TLF_response_matrix[response_index,trial_type] += 1
 
-                        writer.writerow([
+                        output = [
                             comp['trial_number'],
                             comp['trial_type'],
                             comp['stimulus_number'],
                             comp['repetition'],
-                            comp['lag'],
                             lure_bin_index,
                             correctWas,
                             response,
-                            duration])
+                            duration]
+                        if not args.studytest:
+                            output.splice(4, comp['lag'])
+                        writer.writerow(output)
 
 
             # Again, all this is from the Stark analysis
