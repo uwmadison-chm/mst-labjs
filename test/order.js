@@ -40,6 +40,32 @@ function areSame(chunk1, chunk2) {
   }
 }
 
+var checkPairs = function(trials, kind, amount) {
+  var repeats = {};
+  searchTrials(trials,
+    function(x) {
+      return x.trial_type == kind;
+    },
+    function(one, two) {
+      if (one.stimulus_number == two.stimulus_number) {
+        assert.equal(two.trial_type, kind);
+        if (two.trial_type == 'lure') {
+          assert.equal(two.stimulus_letter, 'b');
+        } else if (two.trial_type == 'repeat') {
+          assert.equal(two.stimulus_letter, 'a');
+        }
+        repeats[one.stimulus_number] = repeats[one.stimulus_number] || 0;
+        repeats[one.stimulus_number]++;
+      }
+    }
+  );
+  for (var k in repeats) {
+    assert.equal(repeats[k], 1);
+  }
+  assert.equal(Object.keys(repeats).length, amount)
+};
+
+
 describe('OrderFiller', function() {
   beforeEach(function() {
     o = new OrderFiller('test', clone(order1), clone(set1));
@@ -175,30 +201,6 @@ describe('OrderFiller', function() {
 
 
   describe('should insert stimuli correctly', function() {
-    var checkPairs = function(trials, kind) {
-      var repeats = {};
-      searchTrials(trials,
-        function(x) {
-          return x.trial_type == kind;
-        },
-        function(one, two) {
-          if (one.stimulus_number == two.stimulus_number) {
-            assert.equal(two.trial_type, kind);
-            if (two.trial_type == 'lure') {
-              assert.equal(two.stimulus_letter, 'b');
-            } else if (two.trial_type == 'repeat') {
-              assert.equal(two.stimulus_letter, 'a');
-            }
-            repeats[one.stimulus_number] = repeats[one.stimulus_number] || 0;
-            repeats[one.stimulus_number]++;
-          }
-        }
-      );
-      for (var k in repeats) {
-        assert.equal(repeats[k], 1);
-      }
-    };
-
 
     it('generates trial list', function() {
       var trials = o.trialList();
@@ -219,12 +221,12 @@ describe('OrderFiller', function() {
 
     it('lures happen with an A and a B in trial list', function() {
       var trials = o.trialList();
-      checkPairs(trials, "lure");
+      checkPairs(trials, "lure", 64);
     });
 
     it('repeats happen with an A and a B in trial list', function() {
       var trials = o.trialList();
-      checkPairs(trials, "repeat");
+      checkPairs(trials, "repeat", 64);
     });
 
   });
@@ -292,6 +294,18 @@ describe('OrderFiller', function() {
     it('stimuli are unique in test list', function() {
       var result = o.studyAndTestTrialList();
       areUnique(result.test, 'Should not have found something overlapping in study list');
+    });
+    
+    it('inserts lures in test list', function() {
+      var result = o.studyAndTestTrialList();
+      var lists_combined = result.study.concat(result.test)
+      checkPairs(lists_combined, "lure", 64);
+    });
+
+    it('inserts repeats in test list', function() {
+      var result = o.studyAndTestTrialList();
+      var lists_combined = result.study.concat(result.test)
+      checkPairs(lists_combined, "repeat", 64);
     });
 
     it('keeps same orders with same string key', function() {

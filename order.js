@@ -131,12 +131,12 @@ module.exports = class OrderFiller {
     return trials;
   }
 
-  makeSimpleTrial(index, bin, letter, repetition) {
+  makeSimpleTrial(index, bin, trial_type, letter, repetition) {
     return {
       // force numeric
       "stimulus_number": Number(bin[Number(index)]),
       "stimulus_letter": letter,
-      "trial_type": 'repeat',
+      "trial_type": trial_type,
       "repetition": repetition,
       "lag": undefined,
     }
@@ -181,10 +181,10 @@ module.exports = class OrderFiller {
       studyTrials = this.studyTrials;
     } else {
       for (var i = 0; i < 64; i++) {
-        studyTrials.push(this.makeSimpleTrial(i, this.repeats, 'a', 'a'))
+        studyTrials.push(this.makeSimpleTrial(i, this.repeats, 'repeat', 'a', 'a'))
       }
       for (var i = 0; i < 64; i++) {
-        studyTrials.push(this.makeSimpleTrial(i, this.lures, 'a', 'a'))
+        studyTrials.push(this.makeSimpleTrial(i, this.lures, 'lure', 'a', 'a'))
       }
 
       // shuffle and then fix trial numbers
@@ -195,13 +195,13 @@ module.exports = class OrderFiller {
       testTrials = this.testTrials;
     } else {
       for (var i = 0; i < 64; i++) {
-        testTrials.push(this.makeSimpleTrial(i, this.repeats, 'a', 'b'))
+        testTrials.push(this.makeSimpleTrial(i, this.repeats, 'repeat', 'a', 'b'))
       }
       for (var i = 0; i < 64; i++) {
-        testTrials.push(this.makeSimpleTrial(i, this.lures, 'b', 'b'))
+        testTrials.push(this.makeSimpleTrial(i, this.lures, 'lure', 'b', 'b'))
       }
       for (var i = 0; i < 64; i++) {
-        testTrials.push(this.makeSimpleTrial(i, this.foils, 'a', 'a'))
+        testTrials.push(this.makeSimpleTrial(i, this.foils, 'foil', 'a', 'a'))
       }
 
       // shuffle and then fix trial numbers
