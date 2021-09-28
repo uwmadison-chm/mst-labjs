@@ -1,6 +1,6 @@
 # Mnemonic Similarity Task for lab.js
 
-A simple online continuous MST implementation in lab.js,
+Simple online continuous MST implementations in lab.js,
 based on [this PsychoPy repository](https://github.com/celstark/MST) from the Stark lab.
 
 *PLEASE NOTE*, if you are going to use this task you will need to host the 
@@ -19,6 +19,12 @@ and altered to output JSON. To use your own orderings, load `mst.js` in the
 [lab.js Builder](https://labjs.felixhenninger.com/) and change the 
 embedded `orderN.txt` files on the Trial Loop.
 
+## Versions
+
+* [mst-continuous.json](mst-continuous.json) - Continuous version of the task, with 320 stimuli right after one another.
+* [mst-continuous-phone.json](mst-continuous-phone.json) - Continuous version of the task, *except* it is designed for button input on phones and has a 10 second maximum time per stimulus. [Also functions on tablets and computers.]
+* [mst-studytest.json](mst-studytest.json) - Continuous version of the task, with 320 stimuli right after one another.
+
 
 ## Hosting in Qualtrics
 
@@ -35,16 +41,18 @@ id and session variables like this:
 
 ### Image size
 
-The image stimulus is on two separate "canvas" screens, because of the 
+The image stimulus is on two separate screens, because of the 
 keypress detection and needing to show user feedback after keypress.
 
-To resize how the image displays, change it on both the "Stimulus" and 
+To resize how the image displays in the non-phone versions, change it on both the "Stimulus" and 
 "Stimulus after keypress" screens in the [lab.js Builder](https://labjs.felixhenninger.com/).
 
 
 ## Analysis
 
 See the [analysis](analysis/) directory.
+
+### Qualtrics
 
 It should be as simple as running `unpack.py` on your results.
 
@@ -54,6 +62,9 @@ It should be as simple as running `unpack.py` on your results.
 
 Files will get dumped to `analysis/output`.
 
+### PHP/Sqlite
+
+TODO
 
 ## Development
 
