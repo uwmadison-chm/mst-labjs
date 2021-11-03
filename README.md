@@ -11,8 +11,11 @@ the experiment.
 Pseudorandom lag order is based on ppt and session IDs, passed as "PPT" and 
 "session" in the querystring.
 
-Stimulus set defaults to 1, but you can pick others by passing "stimulusSet" 
-in the querystring.
+Stimulus set defaults to 1, but you can pick a different one by passing 
+"stimulusSet" in the querystring.
+
+Or, (for the phone version only right now), you can pick from a random 
+ordering of the 6 stimuli sets based on "PPT" by passing "stimulusSetIndex".
 
 Lag orders have been built with Nate Vack's `make_lags.py` script, included,
 and altered to output JSON. To use your own orderings, load `mst.js` in the 
@@ -68,13 +71,15 @@ TODO
 
 ## Development
 
-### OrderFiller
+### Libraries
 
-order.js has tests in tests/
+OrderFiller and RandomSet have tests in tests/
 
 I had a hard time getting order.js to load in lab.js land,
 so I made a variant, order-labjs.js, which is included in the
-"static" section of the mst.js template for lab.js
+"static" section of the mst.js template for lab.js.
+
+Same for RandomSet. Someday we should get a bundler to work right.
 
 ### Tests
 
