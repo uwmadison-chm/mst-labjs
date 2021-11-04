@@ -129,7 +129,7 @@
         }
       ],
       "title": "First",
-      "content": "<div class=\"instructions-wrapper\">\r\n  <div class=\"box content\">\r\n    <p>In this experiment, you will be shown a series of items, and you will have to choose if they are NEW, OLD, or SIMILAR to those you have already seen.</p>\r\n    <p>We will look at some examples before you start.</p>\r\n  </div>\r\n  <div class=\"box continue\">\r\n    <p>\r\n      But first, please enter a brief description of the device you are using\r\n      so we can remind you to use the same one later on. For example, you\r\n      might be using \"the old laptop\" or \"Mom's iPad\" or \"my phone\".\r\n    </p>\r\n    <form>\r\n      <p>\r\n        <input type=\"text\" name=\"participant-device\" id=\"participant-device\">\r\n      </p>\r\n      <p>\r\n        <button type=\"submit\" class=\"submit\" id=\"continue\">Continue</button>\r\n      </p>\r\n    </form>\r\n  </div>\r\n</div>",
+      "content": "<div class=\"instructions-wrapper\">\r\n  <div class=\"box content\">\r\n    <p>In this experiment, you will be shown a series of items, and you will have to choose if they are NEW, OLD, or SIMILAR to those you have already seen.</p>\r\n    <p>We will look at some examples before you start.</p>\r\n  </div>\r\n  <div class=\"box continue\">\r\n    <form>\r\n      <p>\r\n        <button type=\"submit\" class=\"submit\" id=\"continue\">Continue</button>\r\n      </p>\r\n    </form>\r\n  </div>\r\n</div>",
       "_tab": "Content"
     },
     "5": {
