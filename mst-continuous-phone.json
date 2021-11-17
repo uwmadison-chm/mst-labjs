@@ -12,15 +12,9 @@
           "type": "string"
         }
       ],
-      "messageHandlers": [
-        {
-          "title": "",
-          "message": "",
-          "code": ""
-        }
-      ],
+      "messageHandlers": [],
       "title": "Stimulus Response",
-      "content": "<div class=\"task-wrapper\">\r\n  <div class=\"box content\"><img src=\"${ parameters.image }\" /></div>\r\n  <button class=\"box button option1 ${ this.state.response == 'old' ? 'active' : '' }\" id=\"old\">Old</button>\r\n  <button class=\"box button option2 ${ this.state.response == 'similar' ? 'active' : '' }\" id=\"similar\">Similar</button>\r\n  <button class=\"box button option3 ${ this.state.response == 'new' ? 'active' : '' }\" id=\"new\">New</button>\r\n</div>",
+      "content": "<div class=\"task-wrapper\">\r\n  <div class=\"box content\"><img src=\"${ parameters.image }\" /></div>\r\n  <button class=\"box button option1 ${ (this.state.ended_on == 'response' && this.state.response == 'old') ? 'active' : '' }\" id=\"old\">Old</button>\r\n  <button class=\"box button option2 ${ (this.state.ended_on == 'response' && this.state.response == 'similar') ? 'active' : '' }\" id=\"similar\">Similar</button>\r\n  <button class=\"box button option3 ${ (this.state.ended_on == 'response' && this.state.response == 'new') ? 'active' : '' }\" id=\"new\">New</button>\r\n</div>",
       "_tab": "Content",
       "correctResponse": "",
       "timeout": "250",
@@ -92,15 +86,18 @@
       ],
       "messageHandlers": [
         {
-          "title": "",
-          "message": "",
+          "title": "Redirect",
+          "message": "after:end",
           "code": ""
         }
       ],
-      "title": "Task Complete",
-      "_tab": "Content",
+      "title": "Complete - No redirect",
+      "_tab": "Behavior",
       "timeout": "100",
-      "content": "<div class=\"instructions-wrapper\">\r\n  <div class=\"box content\">\r\n    <p>Thank you!</p>\r\n    <p>This task is done, and you can now close this tab and return to the surveys.</p>\r\n    <p>If you lost your place, you can go back to your email and use the link from there.</p>\r\n  </div>\r\n</div>"
+      "content": "<div class=\"instructions-wrapper\">\r\n  <div class=\"box content\">\r\n    <h1>Thank you!</h1>\r\n    <p>This task is done, and you can now close this tab and return to the surveys.</p>\r\n    <p>If you lost your place, you can go back to your email and use the link from there.</p>\r\n  </div>\r\n</div>",
+      "skip": false,
+      "tardy": true,
+      "skipCondition": "${ this.state.redirectUrl != '' }"
     },
     "4": {
       "id": "4",
@@ -595,12 +592,46 @@
         {
           "title": "OrderFiller",
           "message": "before:prepare",
-          "code": "// All this because IE is still in use in the wild at 1%\n// and doesn't support getting parameters from the query string\nfunction getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, '\\\\$&');\n    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, ' '));\n}\n\nthis.state.ppt = getParameterByName('PPT') || 0;\nthis.state.session = getParameterByName('session') || 0;\nthis.state.stimulusSetIndex = getParameterByName('stimulusSetIndex') || 0;\nthis.state.stimulusSet = getParameterByName('stimulusSet') || 1;\n\n\n// Make a predictable pseudorandom number generator based on ppt and session id\nvar rng = new Math.seedrandom(String(this.state.ppt) + '/' + String(this.state.session));\nthis.state.orderNum = Math.trunc(rng() * 100);\n\n\n// Use a specific ordering file based on the randomized orderNum\nconst binResponse = await fetch(this.files['order' + this.state.orderNum + '.json'])\nvar binOrder = await binResponse.json()\n\n// The lures get binned by difficulty, so load that for whatever stimulus set we are using\nconst lureResponse = await fetch(this.files['set' + this.state.stimulusSet + '.json'])\nvar lureDifficulty = await lureResponse.json()\n\n// Now we need to take that order and randomize stimuli into it,\n// pulling evenly from the lure difficulty bins.\n// This uses order.js in static files,\n// which has separate tests in the git repo!\nvar filler = new OrderFiller(rng, binOrder, lureDifficulty);\nvar trials = filler.trialList();\n// for debugging\n// trials = trials.slice(0, 5);\nthis.options.templateParameters = trials;\n\n// New feature: if you pass stimulusSetIndex, you get\n// a randomly chosen set, and future sessions will not\n// repeat that set, seeding by PPT\nif (this.state.stimulusSetIndex) {\n  var pptrng = new Math.seedrandom(String(this.state.ppt));\n  var randomSet = new RandomSet(rng);\n  this.state.stimulusSet = randomSet.pickRandomStimulusSetForSession(this.state.stimulusSetIndex)\n}\n\nthis.state.DEBUG = false;\nif (this.state.DEBUG) {\nconsole.log(\"Trials list:\", trials);\n}"
+          "code": "// All this because IE is still in use in the wild at 1%\n// and doesn't support getting parameters from the query string\nfunction getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, '\\\\$&');\n    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, ' '));\n}\n\nthis.state.ppt = getParameterByName('PPT') || 0;\nthis.state.session = getParameterByName('session') || 0;\nthis.state.stimulusSetIndex = getParameterByName('stimulusSetIndex') || 0;\nthis.state.stimulusSet = getParameterByName('stimulusSet') || 1;\nthis.state.redirectUrl = getParameterByName('redirectUrl') || '';\n\n// Make a predictable pseudorandom number generator based on ppt and session id\nvar rng = new Math.seedrandom(String(this.state.ppt) + '/' + String(this.state.session));\nthis.state.orderNum = Math.trunc(rng() * 100);\n\n\n// Use a specific ordering file based on the randomized orderNum\nconst binResponse = await fetch(this.files['order' + this.state.orderNum + '.json'])\nvar binOrder = await binResponse.json()\n\n// The lures get binned by difficulty, so load that for whatever stimulus set we are using\nconst lureResponse = await fetch(this.files['set' + this.state.stimulusSet + '.json'])\nvar lureDifficulty = await lureResponse.json()\n\n// Now we need to take that order and randomize stimuli into it,\n// pulling evenly from the lure difficulty bins.\n// This uses order.js in static files,\n// which has separate tests in the git repo!\nvar filler = new OrderFiller(rng, binOrder, lureDifficulty);\nvar trials = filler.trialList();\n// for debugging\n// trials = trials.slice(0, 5);\nthis.options.templateParameters = trials;\n\n// New feature: if you pass stimulusSetIndex, you get\n// a randomly chosen set, and future sessions will not\n// repeat that set, seeding by PPT\nif (this.state.stimulusSetIndex) {\n  var pptrng = new Math.seedrandom(String(this.state.ppt));\n  var randomSet = new RandomSet(rng);\n  this.state.stimulusSet = randomSet.pickRandomStimulusSetForSession(this.state.stimulusSetIndex)\n}\n\nthis.state.DEBUG = false;\nif (this.state.DEBUG) {\nconsole.log(\"Trials list:\", trials);\n}"
         }
       ],
       "title": "Continuous Trials",
       "_tab": "Scripts",
       "timeout": ""
+    },
+    "6": {
+      "id": "6",
+      "type": "lab.html.Screen",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "Redirect",
+          "message": "after:end",
+          "code": "if (this.state.redirectUrl != '') {\r\n  window.location.replace(String(this.state.redirectUrl));\r\n}\r\n"
+        }
+      ],
+      "title": "Complete - Redirected",
+      "_tab": "Scripts",
+      "timeout": "2000",
+      "content": "<div class=\"instructions-wrapper\">\r\n  <div class=\"box content\">\r\n    <h1>Thank you!</h1>\r\n    <p>This task is done.</p>\r\n    <p>You will be sent back to the rest of the study shortly...</p>\r\n  </div>\r\n</div>",
+      "skip": false,
+      "tardy": true,
+      "skipCondition": "${ this.state.redirectUrl == '' }"
     },
     "7": {
       "id": "7",
@@ -660,7 +691,7 @@
         {
           "title": "Set up image",
           "message": "before:prepare",
-          "code": "// If it's a foil or a lure, we use whatever \"repetition\" got set to.\n// If it's a repeat, we want to force always showing the \"a\" stimulus.\nvar letter = this.parameters.trial_type == 'repeat' ? \"a\" : this.parameters.repetition;\n// Host the Stark lab photos on a CDN of your choice...\nvar url = \"https://YOUR_CDN_HERE\"\nvar setUrl = url + \"set\" + this.state.stimulusSet + \"/\";\nthis.parameters.image = setUrl + String(this.parameters.stimulus_number).padStart(3, '0') + letter + \".jpg\";\n\n// Cheesy way to make the image for this screen get cached by the browser\n//tempImage = new Image();\n//tempImage.src = this.parameters.image;\n\nthis.options.media = {\n  'images': [ this.parameters.image ],\n  'audio': [\n    // must remain empty to dodge a lab.js bug\n  ]\n}\n\n// Figure out and store what the correct response should be for trial_type and repetition, the parameters that the Stark version of the task uses\nif (this.parameters.trial_type == 'repeat' && this.parameters.repetition == 'b') {\n  this.parameters.correctResponse = 'old';\n} else if (this.parameters.trial_type == 'lure' && this.parameters.repetition == 'b') {\n  this.parameters.correctResponse = 'similar';\n} else {\n  this.parameters.correctResponse = 'new';  \n}"
+          "code": "// If it's a foil or a lure, we use whatever \"repetition\" got set to.\n// If it's a repeat, we want to force always showing the \"a\" stimulus.\nvar letter = this.parameters.trial_type == 'repeat' ? \"a\" : this.parameters.repetition;\n// Host the Stark lab photos on a CDN of your choice...\nvar url = \"YOUR_CDN_HERE\"\nvar setUrl = url + \"set\" + this.state.stimulusSet + \"/\";\nthis.parameters.image = setUrl + String(this.parameters.stimulus_number).padStart(3, '0') + letter + \".jpg\";\n\nthis.options.media = {\n  'images': [ this.parameters.image ],\n  'audio': [\n    // must remain empty to dodge a lab.js bug\n  ]\n}\n\n// Figure out and store what the correct response should be for trial_type and repetition, the parameters that the Stark version of the task uses\nif (this.parameters.trial_type == 'repeat' && this.parameters.repetition == 'b') {\n  this.parameters.correctResponse = 'old';\n} else if (this.parameters.trial_type == 'lure' && this.parameters.repetition == 'b') {\n  this.parameters.correctResponse = 'similar';\n} else {\n  this.parameters.correctResponse = 'new';  \n}"
         },
         {
           "title": "Logging",
@@ -1032,16 +1063,10 @@
           "type": "string"
         }
       ],
-      "messageHandlers": [
-        {
-          "title": "",
-          "message": "",
-          "code": ""
-        }
-      ],
+      "messageHandlers": [],
       "title": "Stimulus",
       "content": "<div class=\"task-wrapper\">\r\n  <div class=\"box content\"><img src=\"${ parameters.image }\" /></div>\r\n  <button class=\"box button option1\" id=\"old\">Old</button>\r\n  <button class=\"box button option2\" id=\"similar\">Similar</button>\r\n  <button class=\"box button option3\" id=\"new\">New</button>\r\n</div>",
-      "_tab": "Behavior",
+      "_tab": "Scripts",
       "correctResponse": "${ this.parameters.correctResponse }",
       "timeout": "10000"
     },
@@ -1083,7 +1108,8 @@
       "children": [
         "2",
         "5",
-        "3"
+        "3",
+        "6"
       ],
       "parameters": [
         {
