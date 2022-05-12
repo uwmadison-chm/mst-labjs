@@ -6,7 +6,9 @@
  */
 
 class RandomSet {
-  // Pick one of the 6 stark stimulus sets, with a stable ordering for each participant
+  // Pick one of the 5 stimulus sets, with a stable ordering for each participant
+  // We're limiting to 5 now because the 6th was picked from to fix issues 
+  // with the first 5
   constructor(seedOrRng, order, lureDifficulty) {
     if (typeof seedOrRng === "string" || typeof seedOrRng === "number") {
       this.rng = seedrandom(seedOrRng);
@@ -14,7 +16,7 @@ class RandomSet {
       this.rng = seedOrRng;
     }
 
-    var stimulusSets = [1,2,3,4,5,6];
+    var stimulusSets = [1,2,3,4,5];
     this.setOrder = this.shuffle(stimulusSets, this.rng);
   }
 
