@@ -34,16 +34,38 @@ describe('RandomSet', function() {
       var set1 = r.pickRandomStimulusSetForSession(1);
       var set2 = r.pickRandomStimulusSetForSession(2);
 
-      assert.equal(set1, 5);
-      assert.equal(set2, 1);
+      assert.equal(set1, 1);
+      assert.equal(set2, 3);
     });
 
     it('can pick based on a string session variable', function() {
       var set1 = r.pickRandomStimulusSetForSession('T1');
       var set2 = r.pickRandomStimulusSetForSession('T2');
 
-      assert.equal(set1, 5);
-      assert.equal(set2, 1);
+      assert.equal(set1, 1);
+      assert.equal(set2, 3);
     });
+
+
+    it('picks the same set based on the same input', function() {
+      var set1 = r.pickRandomStimulusSetForSession(1);
+      var set2 = r.pickRandomStimulusSetForSession(1);
+
+      assert.equal(set1, set2);
+    });
+
+    it('does not repeat sets in 5 tries', function() {
+      var set1 = r.pickRandomStimulusSetForSession(1);
+      var set2 = r.pickRandomStimulusSetForSession(2);
+      var set3 = r.pickRandomStimulusSetForSession(3);
+      var set4 = r.pickRandomStimulusSetForSession(4);
+      var set5 = r.pickRandomStimulusSetForSession(5);
+
+      var list = [set1, set2, set3, set4, set5];
+      var set = new Set(list)
+
+      assert.equal(list.length, set.size);
+    });
+
   });
 });
