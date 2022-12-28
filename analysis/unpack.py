@@ -7,6 +7,8 @@ import json
 import os
 import pandas as pd
 import numpy as np
+from itertools import groupby
+from collections import defaultdict
 
 import argparse
 
@@ -19,6 +21,9 @@ global trial_counter
 parser = argparse.ArgumentParser()
 parser.add_argument("input")
 parser.add_argument("output")
+parser.add_argument("--tsv",
+        help="File is a tsv, not a csv",
+        action="store_true")
 parser.add_argument("--studytest",
         help="Run study/test version instead of continuous",
         action="store_true")
@@ -41,9 +46,15 @@ if args.qualtrics:
             observations.append(json.loads(stuff))
 
 else:
-    df = pd.read_csv(args.input, header=0)
+    df = pd.read_csv(args.input, header=0,
+            sep='\t' if args.tsv else ',',
+            low_memory=False)
+
     # Need to group the data by observation id
     groups = df.groupby(by='observation')
+
+    os.makedirs(args.output, exist_ok=True)
+
     # list(groups) returns a tuple of (observation <string>, df)
     # and we use to_dict to make the results look like the unpacked
     # JSON from Qualtrics above so we can do the following nonsense
