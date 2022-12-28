@@ -62,6 +62,65 @@ else:
     observations = [x[1].to_dict('records') for x in list(groups)]
 
 
+logging.debug(f"Dupe check starting with {len(observations)}")
+
+# Check for multiple observations by the same participant id and session 
+# number and delete any after the first one, by timestamp
+
+# Pull out some helpful values into a list of tuples
+by_ppt = [(x['ppt'], x['session'], x['observation'], x['trial_number'], x['timestamp']) for o in observations for x in o]
+
+# Build a set ofjust ppt, session, and observation
+by_session = set([x[:3] for x in by_ppt])
+
+# Now group those observations by ppt and session
+# I can't get itertools groupby to work reliably - it seems to be nondeterministic
+# so uh, I'm probably really confused.
+possible_dupes = defaultdict(list)
+for ppt, session, observation in by_session:
+    possible_dupes[(ppt, session)].append(observation)
+
+# Now iterate over those results
+for (ppt, session), possibles in possible_dupes.items():
+    if len(possibles) > 1:
+        # More than 1 observation for a ppt and session found! Time to dig in.
+        dupes = []
+
+        # Find the highest trial number and the latest timestamp in each observation
+        for obs in possibles:
+            timestamp = ""
+            trial_number = np.nan
+
+            data = [x for o in observations for x in o if x['ppt'] == ppt and x['session'] == session and x['observation'] == obs]
+            trial_numbers = [x['trial_number'] for x in data]
+            timestamps = [x['timestamp'] for x in data]
+
+            dupes.append((obs, max(trial_numbers), max(timestamps)))
+
+        dupes = sorted(dupes, key=lambda x: x[2])
+        
+        # Now we take the first observation *that has trials*
+        # and remove any other ones from the later
+        keep_obs = None
+        for obs, trial_number, _ in dupes:
+            if trial_number > 0 and keep_obs is None:
+                keep_obs = obs
+
+        # Edge case: No observations had any trials? Just take the first one
+        if keep_obs is None:
+            keep_obs = dupes[0][0]
+
+        logging.debug(f"Doing dupe removal for {possibles}. Keeping {keep_obs}. Started with {len(observations)}")
+
+        # Now for any ones we're not keeping, delete them from the main observations list
+        for obs, _, _ in dupes:
+            if obs != keep_obs:
+                observations = [o for o in observations if o[0]['observation'] != obs]
+
+        logging.debug(f"Now have {len(observations)}")
+
+logging.debug(f"After duplicate check, we have {len(observations)}")
+
 for data in observations:
     if len(data) == 0:
         logging.warning(f'Got an observation with no data')
@@ -79,6 +138,9 @@ for data in observations:
         ppt_dir = os.path.join(args.output, ppt)
 
         os.makedirs(ppt_dir, exist_ok=True)
+        with open(os.path.join(ppt_dir, f"{session}_time.txt"), mode='w') as out:
+            out.write(f"{first['timestamp']}\n")
+
         with open(os.path.join(ppt_dir, f"{session}_metadata.txt"), mode='w') as out:
             out.write(f"PPT: {ppt}\n")
             out.write(f"Session: {session}\n")
